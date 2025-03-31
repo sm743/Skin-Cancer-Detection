@@ -144,8 +144,7 @@ axialSliceTranslated = mriVolumeTranslated(:,sliceIndex);
 
 [m,n]=size(left);
 
-disp(m);
-disp(n);
+
 leftImage=zeros((m+(2*span)),(n+dispmax+(2*span)));
 for i=span+1:1:m+span
     for j=span+1:1:n+span
@@ -154,7 +153,7 @@ for i=span+1:1:m+span
 end
 % right=imread([pathname2,filename2]);
 right=double(axialSliceTranslated);
- right=imresize(image,[240 360]);
+ right=imresize(right,[240 360]);
 
 
 [k,l]=size(right);
@@ -220,7 +219,7 @@ finalmap=handles.finalmap;
 axes(handles.axes4)
 
 mesh(double(finalmap)); 
-% colormap
+% % colormap
 
 
 % --- Executes on button press in feat.
@@ -229,18 +228,50 @@ function feat_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 finalmap=handles.finalmap;
+Dinp = uint8(finalmap);
+Dmax = max(Dinp(:));
+Dmin = min(Dinp(:));
+NumL = Dmax - Dmin;
+Gm = graycomatrix(Dinp,'Graylimit',[Dmin Dmax],'Numlevels',NumL);
+GProps = graycoprops(Gm);
+
+Fa1 = GProps.Energy;
+Fa2 = GProps.Contrast;
+Fa3 = GProps.Correlation;
+Fa4 = GProps.Homogeneity;
+Fa5 = entropy(Gm);
 
 
+Feat = [Fa1];
+Feat = Feat';
+QFeat = Feat;
+save QFeat QFeat
+
+msgbox('Feature Extraction completed')
 
 % --- Executes on button press in train.
 function train_Callback(hObject, eventdata, handles)
 % hObject    handle to train (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+train;
 
 % --- Executes on button press in classify.
 function classify_Callback(hObject, eventdata, handles)
 % hObject    handle to classify (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+load QFeat;
+load dfeatures;
+load svmst;
+
+% qfeatx=max(max(qfeat))
+%%%%%%classification
+cout = svmclassify(svmst,QFeat);
+% cout = vec2ind(cout);
+
+if isequal(cout,1)
+msgbox('Malignant')
+else isequal(cout,2)
+msgbox('Benign');
+end
